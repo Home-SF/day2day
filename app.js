@@ -9,7 +9,7 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+  getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const app = initializeApp(firebaseConfig);
@@ -470,11 +470,19 @@ function nextDayHash(year, month, day) {
 document.getElementById('btn-google-signin').addEventListener('click', async () => {
   signinError.textContent = '';
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    await signInWithRedirect(auth, new GoogleAuthProvider());
+    // Page navigates away here; execution resumes after Google redirects back.
   } catch (e) {
-    console.error('Sign-in failed', e);
+    console.error('Sign-in redirect failed to start', e);
     signinError.textContent = 'Sign-in failed — please try again.';
   }
+});
+
+// Surfaces errors from the redirect flow itself (e.g. unauthorized-domain)
+// once the page reloads after coming back from Google.
+getRedirectResult(auth).catch((e) => {
+  console.error('Sign-in failed on return from redirect', e);
+  signinError.textContent = `Sign-in failed: ${e.code || 'please try again.'}`;
 });
 
 document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
