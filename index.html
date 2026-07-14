@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Field Log</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="signin-screen" class="signin-screen">
+    <div class="signin-card">
+      <div class="masthead">Field Log<span class="tick">.</span></div>
+      <p class="signin-copy">A private field record. Sign in to continue.</p>
+      <button class="btn signin-btn" id="btn-google-signin">
+        <span>🔑</span> Sign in with Google
+      </button>
+      <p class="signin-error" id="signin-error"></p>
+    </div>
+  </div>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <header class="app-header">
+      <div class="masthead">Field Log<span class="tick">.</span></div>
+      <div class="header-row">
+        <nav class="breadcrumb" id="breadcrumb"></nav>
+        <button class="signout-link" id="btn-signout">Sign out</button>
+      </div>
+    </header>
+
+    <main id="main"></main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

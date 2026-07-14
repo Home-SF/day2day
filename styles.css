@@ -1,0 +1,613 @@
+/* ===========================================================
+   Field Log — design tokens
+   Almanac / ledger aesthetic: aged paper, dotted rules, brick-red
+   accent, columnar metadata. A field record, not a diary.
+   =========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Libre+Caslon+Text:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --paper: #ece4d3;
+  --paper-line: #d7cbb2;
+  --ink: #2f3b47;
+  --ink-soft: #45525e;
+  --muted: #7a5a45;
+  --rule: #9c8a6c;
+  --rule-soft: #d7cbb2;
+  --accent: #a13d2c;       /* brick-red */
+  --accent-soft: #ecd6cc;
+  --stamp: #6b5330;        /* aged-gold seal, secondary structural tone */
+  --stamp-soft: #e6dcc4;
+  --card: #f5efe1;
+  --shadow: 0 1px 0 rgba(47,59,71,0.08);
+  --radius: 2px;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Libre Caslon Text', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* Ledger-ruled background: faint tan horizontal lines */
+body {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 26px,
+    var(--paper-line) 26px,
+    var(--paper-line) 27px
+  );
+  background-attachment: local;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button {
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+::selection { background: var(--accent-soft); }
+
+/* Focus visibility */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------- Layout shell ---------------- */
+
+.app-header {
+  padding: 18px 16px 12px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.masthead {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.masthead .tick {
+  color: var(--accent);
+}
+
+.breadcrumb {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.breadcrumb a { color: var(--muted); }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb .sep { color: var(--rule); }
+.breadcrumb .current { color: var(--ink); }
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 90px;
+}
+
+/* ---------------- List views (years / months / days) ---------------- */
+
+.list-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 25px;
+  margin: 6px 0 18px;
+  color: var(--ink);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+}
+
+.grid-card {
+  background: var(--card);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  display: block;
+  min-height: 44px;
+}
+
+.grid-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.grid-card .primary {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  display: block;
+}
+
+.grid-card .secondary {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.grid-card.today {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.grid-card.empty .primary { color: var(--muted); }
+
+/* ---------------- Day page ---------------- */
+
+.day-header {
+  background: var(--card);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  padding: 16px 16px 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.day-header::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--accent);
+}
+
+.day-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.day-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.day-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 6px 10px;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink-soft);
+}
+
+.meta-badge .icon { font-size: 13px; }
+.meta-badge.city { border-color: var(--stamp); color: var(--stamp); }
+.meta-badge.weather { border-color: var(--accent); color: var(--accent); }
+
+/* ---------------- Composer ---------------- */
+
+.composer {
+  background: var(--card);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-style: italic;
+  /* 16px avoids iOS Safari auto-zooming the page on focus */
+  font-size: 16px;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 4px 2px 12px;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.composer textarea::placeholder { font-style: italic; color: var(--muted); }
+.composer textarea:focus { outline: none; }
+
+/* Mobile-first: composer actions stack, every control is full-width
+   and at least 44px tall for comfortable thumb targets. */
+.composer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons .btn {
+  flex: 1;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  min-height: 44px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  text-align: center;
+}
+
+.btn:hover { border-color: var(--ink-soft); }
+
+.btn.checkin {
+  border-color: var(--stamp);
+  color: var(--stamp);
+}
+.btn.checkin:hover { background: var(--stamp-soft); }
+
+.btn.photo {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn.photo:hover { background: var(--accent-soft); }
+
+.btn.save {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn.save:hover { opacity: 0.88; }
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+input[type="file"] { display: none; }
+
+/* ---------------- Timeline ---------------- */
+
+.timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--rule-soft);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink-soft);
+}
+
+.timeline-item.text::before { border-color: var(--ink-soft); }
+.timeline-item.checkin::before { border-color: var(--accent); background: var(--accent); }
+.timeline-item.photo::before { border-color: var(--stamp); background: var(--stamp); }
+
+.timeline-time {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.timeline-body {
+  background: var(--card);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+
+.timeline-body.text-entry p {
+  margin: 0;
+  font-size: 15.5px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* Ledger seal — check-in stamp */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+}
+
+.stamp-ring {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.stamp-ring::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px dotted var(--accent);
+  border-radius: 50%;
+}
+
+.stamp-text .label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.stamp-text .place {
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.photo-entry img {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 1px;
+  filter: saturate(0.94) contrast(1.02);
+}
+
+.photo-entry .caption {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-top: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* ---------------- Nav footer ---------------- */
+
+.day-nav {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px dotted var(--rule);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.day-nav a {
+  color: var(--ink-soft);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* ---------------- Auth gate ---------------- */
+
+.signin-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.signin-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.signin-card .masthead {
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.signin-copy {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin: 0 0 22px;
+}
+
+.signin-btn {
+  width: 100%;
+}
+
+.signin-error {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  margin: 14px 0 0;
+  min-height: 14px;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.header-row .breadcrumb { margin-top: 0; flex: 1; }
+
+.signout-link {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+
+.signout-link:hover { color: var(--accent); text-decoration: underline; }
+
+/* ---------------- Toast ---------------- */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===========================================================
+   Base styles above are mobile-first (designed for ~360-390px
+   phone widths first). This breakpoint layers on roomier spacing,
+   larger type, and an inline composer layout for tablet/desktop —
+   it only ever ADDS space, never fixes something broken on mobile.
+   =========================================================== */
+@media (min-width: 600px) {
+  .app-header { padding: 28px 24px 18px; }
+  .masthead { font-size: 23px; }
+  main { padding: 0 24px 80px; }
+
+  .list-title { font-size: 32px; margin: 8px 0 24px; }
+  .entry-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .grid-card { padding: 16px 14px; }
+
+  .day-header { padding: 22px 22px 18px; margin-bottom: 28px; }
+  .day-title { font-size: 27px; }
+
+  .composer { padding: 16px; margin-bottom: 28px; }
+  .composer-actions { flex-direction: row; align-items: center; justify-content: space-between; }
+  .action-buttons { flex-wrap: nowrap; }
+  .action-buttons .btn { flex: none; width: auto; }
+  .btn { width: auto; padding: 9px 14px; min-height: 40px; }
+
+  .timeline { padding-left: 26px; }
+  .timeline::before { left: 8px; }
+  .timeline-item { margin-bottom: 20px; }
+  .timeline-item::before { left: -26px; }
+
+  .stamp-ring { width: 40px; height: 40px; font-size: 16px; }
+  .photo-entry img { max-height: 420px; }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
