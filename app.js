@@ -9,7 +9,7 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
+  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const app = initializeApp(firebaseConfig);
@@ -599,19 +599,37 @@ function nextDayHash(year, month, day) {
 
 // ---------------- Auth gate ----------------
 
+// signInWithPopup is used instead of signInWithRedirect because Safari's
+// tracking prevention partitions storage across a full-page redirect to
+// accounts.google.com and back, silently losing the auth handshake (no
+// error thrown — onAuthStateChanged just never fires with a user). A
+// popup keeps everything in the same tab context and talks back via
+// postMessage, which Safari handles reliably.
 document.getElementById('btn-google-signin').addEventListener('click', async () => {
   signinError.textContent = '';
   try {
-    await signInWithRedirect(auth, new GoogleAuthProvider());
-    // Page navigates away here; execution resumes after Google redirects back.
+    await signInWithPopup(auth, new GoogleAuthProvider());
+    // onAuthStateChanged below picks up the signed-in user from here.
   } catch (e) {
-    console.error('Sign-in redirect failed to start', e);
-    signinError.textContent = 'Sign-in failed — please try again.';
+    console.error('Sign-in popup failed', e);
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+      // Fall back to redirect only if the popup itself couldn't open
+      // (e.g. a strict popup blocker) — better than a dead button.
+      try {
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+      } catch (e2) {
+        console.error('Sign-in redirect fallback failed', e2);
+        signinError.textContent = 'Sign-in failed — please try again.';
+      }
+    } else if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      // User closed the picker themselves — not a real error, stay quiet.
+    } else {
+      signinError.textContent = `Sign-in failed: ${e.code || 'please try again.'}`;
+    }
   }
 });
 
-// Surfaces errors from the redirect flow itself (e.g. unauthorized-domain)
-// once the page reloads after coming back from Google.
+// Still handled in case the redirect fallback above was used.
 getRedirectResult(auth).catch((e) => {
   console.error('Sign-in failed on return from redirect', e);
   signinError.textContent = `Sign-in failed: ${e.code || 'please try again.'}`;
