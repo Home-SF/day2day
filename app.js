@@ -476,8 +476,8 @@ async function renderDayPage(year, month, day) {
       <div class="composer-actions" id="composer-actions">
         <div class="action-buttons">
           <button class="btn checkin" id="btn-checkin"><span>📌</span> Check in</button>
-          <label class="btn photo" for="photo-input"><span>🖼️</span> Add photo</label>
-          <input type="file" id="photo-input" accept="image/*" capture="environment">
+          <label class="btn media" for="media-input"><span>🎞️</span> Add media</label>
+          <input type="file" id="media-input" accept="image/*,video/*">
         </div>
         <button class="btn save" id="btn-save">Save entry</button>
       </div>
@@ -693,17 +693,27 @@ async function renderDayPage(year, month, day) {
     }
   });
 
-  document.getElementById('photo-input').addEventListener('change', async (e) => {
+  // Media (photo or video). The file input has no `accept` restriction
+  // beyond image/video MIME types and no `capture` attribute, so mobile
+  // browsers show the full native picker — camera, photo library, and
+  // video — rather than jumping straight to the camera.
+  document.getElementById('media-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    showToast('Uploading photo…');
+    const isVideo = file.type.startsWith('video/');
+    showToast(isVideo ? 'Uploading video…' : 'Uploading photo…');
     try {
       const path = `${STORAGE_PREFIX}/${dayId}/${Date.now()}_${file.name}`;
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      await addEntry(dayId, { type: 'photo', photoURL: url });
-      showToast('Photo added');
+      if (isVideo) {
+        await addEntry(dayId, { type: 'video', videoURL: url });
+        showToast('Video added');
+      } else {
+        await addEntry(dayId, { type: 'photo', photoURL: url });
+        showToast('Photo added');
+      }
       loadTimeline(dayId);
     } catch (err) {
       console.error(err);
@@ -773,6 +783,14 @@ async function loadTimeline(dayId) {
       img.src = entry.photoURL;
       img.alt = 'Logged photo';
       body.appendChild(img);
+    } else if (entry.type === 'video') {
+      body.classList.add('video-entry');
+      const video = document.createElement('video');
+      video.src = entry.videoURL;
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      body.appendChild(video);
     }
     item.appendChild(body);
     timeline.appendChild(item);
