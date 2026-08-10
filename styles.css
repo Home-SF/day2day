@@ -413,6 +413,29 @@ input[type="file"] { display: none; }
 
 .tag-step-actions .btn { flex: 1; }
 
+/* ---------------- Check-in step ---------------- */
+/* Appears in place of the composer's action row once "Check in" has
+   located the person and suggested a name (address or venue) — lets
+   them keep the suggestion or overwrite it with their own name before
+   saving. Reuses the tag-step's label/hint/actions visual language. */
+
+.checkin-step {
+  margin-top: 12px;
+}
+
+#checkin-name-input {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  /* 16px avoids iOS Safari auto-zooming the page on focus */
+  font-size: 16px;
+  padding: 11px 12px;
+  min-height: 44px;
+}
+
 /* ---------------- Timeline ---------------- */
 
 .timeline {
@@ -746,6 +769,7 @@ input[type="file"] { display: none; }
   .tag-step-actions { justify-content: flex-end; }
   .tag-step-actions .btn { flex: none; width: auto; }
   #tag-input { max-width: 360px; }
+  #checkin-name-input { max-width: 360px; }
 
   #search-tag-select { max-width: 320px; }
 
