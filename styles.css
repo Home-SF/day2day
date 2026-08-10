@@ -638,6 +638,49 @@ input[type="file"] { display: none; }
 
 .header-row .breadcrumb { margin-top: 0; flex: 1; }
 
+.header-icon-link {
+  font-size: 17px;
+  line-height: 1;
+  padding: 6px 4px;
+  flex-shrink: 0;
+  color: var(--ink-soft);
+}
+.header-icon-link:hover { color: var(--accent); text-decoration: none; }
+
+/* ---------------- Search page ---------------- */
+
+.search-bar {
+  margin-bottom: 20px;
+}
+
+#search-tag-select {
+  width: 100%;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  /* 16px avoids iOS Safari auto-zooming the page on focus */
+  font-size: 16px;
+  padding: 11px 12px;
+  min-height: 44px;
+}
+
+#search-tag-select:disabled { color: var(--muted); }
+
+.timeline-time a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
+.entry-tag-match {
+  background: var(--stamp);
+  border-style: solid;
+  color: var(--paper);
+}
+
 .signout-link {
   background: none;
   border: none;
@@ -703,6 +746,8 @@ input[type="file"] { display: none; }
   .tag-step-actions { justify-content: flex-end; }
   .tag-step-actions .btn { flex: none; width: auto; }
   #tag-input { max-width: 360px; }
+
+  #search-tag-select { max-width: 320px; }
 
   .timeline { padding-left: 26px; }
   .timeline::before { left: 8px; }
