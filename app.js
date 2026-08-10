@@ -4,11 +4,11 @@ import { firebaseConfig, COLLECTION_PREFIX, STORAGE_PREFIX } from './firebase-co
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, collectionGroup, doc, getDoc, getDocs, setDoc, addDoc,
+  getFirestore, collection, collectionGroup, doc, getDoc, getDocs, setDoc, addDoc, deleteDoc,
   query, orderBy, where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getStorage, ref, uploadBytes, getDownloadURL
+  getStorage, ref, uploadBytes, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
@@ -110,6 +110,23 @@ async function addEntry(dayId, entry) {
     ...entry,
     timestamp: new Date().toISOString()
   });
+}
+
+// Deletes an entry doc, and best-effort cleans up its Storage file if
+// it's a photo or video. Storage cleanup failure (e.g. a permissions
+// gap, or the file already being gone) doesn't block the entry from
+// disappearing from the log — that's the part the person actually
+// cares about.
+async function deleteEntry(dayId, entry) {
+  await deleteDoc(doc(db, DAYS_COLLECTION, dayId, 'entries', entry.id));
+  const fileURL = entry.photoURL || entry.videoURL;
+  if (fileURL) {
+    try {
+      await deleteObject(ref(storage, fileURL));
+    } catch (e) {
+      console.warn('Storage cleanup failed (entry already removed from log)', e);
+    }
+  }
 }
 
 // Pulls every tag ever used on a text entry, across all days, so the
@@ -752,6 +769,24 @@ async function loadTimeline(dayId) {
     const body = document.createElement('div');
     body.className = 'timeline-body';
 
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'entry-delete';
+    delBtn.setAttribute('aria-label', 'Delete entry');
+    delBtn.textContent = '🗑';
+    delBtn.addEventListener('click', async () => {
+      if (!confirm("Delete this entry? This can't be undone.")) return;
+      try {
+        await deleteEntry(dayId, entry);
+        showToast('Entry deleted');
+        loadTimeline(dayId);
+      } catch (err) {
+        console.error(err);
+        showToast(friendlyError(err));
+      }
+    });
+    body.appendChild(delBtn);
+
     if (entry.type === 'text') {
       body.classList.add('text-entry');
       const p = document.createElement('p');
@@ -769,14 +804,15 @@ async function loadTimeline(dayId) {
         body.appendChild(tagsWrap);
       }
     } else if (entry.type === 'checkin') {
-      body.innerHTML = `
-        <div class="stamp">
-          <div class="stamp-ring">📌</div>
-          <div class="stamp-text">
-            <div class="label">Check-in</div>
-            <div class="place">${entry.location?.label || 'Unknown location'}</div>
-          </div>
+      const stamp = document.createElement('div');
+      stamp.className = 'stamp';
+      stamp.innerHTML = `
+        <div class="stamp-ring">📌</div>
+        <div class="stamp-text">
+          <div class="label">Check-in</div>
+          <div class="place">${entry.location?.label || 'Unknown location'}</div>
         </div>`;
+      body.appendChild(stamp);
     } else if (entry.type === 'photo') {
       body.classList.add('photo-entry');
       const img = document.createElement('img');
@@ -850,7 +886,16 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     signinScreen.hidden = true;
     appShell.hidden = false;
-    route();
+    const hash = location.hash.replace(/^#\/?/, '');
+    if (!hash) {
+      // No specific page was requested (fresh sign-in, or just opening
+      // the app) — land on today rather than the Years overview.
+      // Setting the hash fires 'hashchange' below, which calls route().
+      const d = new Date();
+      location.hash = `/${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    } else {
+      route();
+    }
   } else {
     signinScreen.hidden = false;
     appShell.hidden = true;
