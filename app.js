@@ -1,3 +1,5 @@
+// CI/CD test: this comment exists only to trigger the GitHub Actions
+// deploy workflow and confirm it runs end-to-end. Safe to remove anytime.
 import { firebaseConfig, COLLECTION_PREFIX, STORAGE_PREFIX } from './firebase-config.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
