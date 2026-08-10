@@ -60,6 +60,14 @@ button {
 
 ::selection { background: var(--accent-soft); }
 
+/* The [hidden] attribute is how app.js toggles the sign-in screen vs.
+   the app shell. Without this rule, any element with its own
+   `display` value (like .signin-screen's `display: flex`) silently
+   overrides [hidden] due to normal cascade order — the element stays
+   visible even after JS sets hidden=true. This makes [hidden] always
+   win, regardless of what else is declared on the element. */
+[hidden] { display: none !important; }
+
 /* Focus visibility */
 a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--accent);
