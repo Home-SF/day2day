@@ -190,6 +190,10 @@ function getPosition() {
   });
 }
 
+// City-only reverse geocode, used for the compact day-header location
+// badge (e.g. "📍 San Jose"). Deliberately coarse — keeps that badge
+// short. See reverseGeocodePlace() for the more detailed version used
+// by check-in, which needs a street address or venue name.
 async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
@@ -197,6 +201,28 @@ async function reverseGeocode(lat, lng) {
     return data.city || data.locality || data.principalSubdivision || 'Unknown location';
   } catch (e) {
     console.error('Reverse geocode failed', e);
+    return 'Unknown location';
+  }
+}
+
+// More detailed reverse geocode for check-in: prefers a named place
+// (e.g. "Golden Gate Park", a business) when the coordinates match a
+// known point of interest, and otherwise falls back to a street
+// address. Uses OpenStreetMap's Nominatim, which is free and doesn't
+// need an API key — fine for this app's light, personal usage.
+async function reverseGeocodePlace(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: { 'Accept-Language': 'en' }
+    });
+    const data = await res.json();
+    if (data.name) return data.name;
+    const a = data.address || {};
+    const street = [a.house_number, a.road].filter(Boolean).join(' ');
+    const city = a.city || a.town || a.village || a.county;
+    return [street, city].filter(Boolean).join(', ') || data.display_name || 'Unknown location';
+  } catch (e) {
+    console.error('Reverse geocode (place) failed', e);
     return 'Unknown location';
   }
 }
@@ -466,6 +492,15 @@ async function renderDayPage(year, month, day) {
           <button class="btn save" id="btn-tag-confirm" type="button">Save entry</button>
         </div>
       </div>
+
+      <div class="checkin-step" id="checkin-step" hidden>
+        <div class="tag-step-label">Name this check-in <span class="tag-step-hint">(edit or keep the suggested name)</span></div>
+        <input type="text" id="checkin-name-input" placeholder="e.g. Blue Bottle Coffee">
+        <div class="tag-step-actions">
+          <button class="btn" id="btn-checkin-cancel" type="button">Cancel</button>
+          <button class="btn save" id="btn-checkin-confirm" type="button">Save check-in</button>
+        </div>
+      </div>
     </div>
 
     <div class="timeline" id="timeline">Loading…</div>
@@ -596,21 +631,65 @@ async function renderDayPage(year, month, day) {
     }
   });
 
+  // ---- Check-in step ----
+  const checkinStep = document.getElementById('checkin-step');
+  const checkinNameInput = document.getElementById('checkin-name-input');
+  let pendingCheckin = null; // { lat, lng } captured while the step is open
+
+  function openCheckinStep(suggestedName) {
+    checkinNameInput.value = suggestedName || '';
+    composerActions.hidden = true;
+    checkinStep.hidden = false;
+    checkinNameInput.focus();
+    checkinNameInput.select();
+  }
+
+  function closeCheckinStep() {
+    checkinStep.hidden = true;
+    composerActions.hidden = false;
+    pendingCheckin = null;
+  }
+
   document.getElementById('btn-checkin').addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
-    btn.textContent = 'Checking in…';
+    btn.textContent = 'Locating…';
     try {
       const { lat, lng } = await getPosition();
-      const place = await reverseGeocode(lat, lng);
-      await addEntry(dayId, { type: 'checkin', location: { lat, lng, label: place } });
-      showToast('Checked in at ' + place);
-      loadTimeline(dayId);
+      const suggestedName = await reverseGeocodePlace(lat, lng);
+      pendingCheckin = { lat, lng };
+      openCheckinStep(suggestedName);
     } catch (err) {
       showToast(friendlyError(err));
     } finally {
       btn.disabled = false;
       btn.innerHTML = '<span>📌</span> Check in';
+    }
+  });
+
+  checkinNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('btn-checkin-confirm').click();
+    }
+  });
+
+  document.getElementById('btn-checkin-cancel').addEventListener('click', () => {
+    closeCheckinStep();
+  });
+
+  document.getElementById('btn-checkin-confirm').addEventListener('click', async () => {
+    if (!pendingCheckin) { closeCheckinStep(); return; }
+    const name = checkinNameInput.value.trim() || 'Unknown location';
+    const { lat, lng } = pendingCheckin;
+    try {
+      await addEntry(dayId, { type: 'checkin', location: { lat, lng, label: name } });
+      showToast('Checked in at ' + name);
+      closeCheckinStep();
+      loadTimeline(dayId);
+    } catch (err) {
+      console.error(err);
+      showToast(friendlyError(err));
     }
   });
 
