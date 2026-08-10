@@ -319,11 +319,11 @@ main {
 }
 .btn.checkin:hover { background: var(--stamp-soft); }
 
-.btn.photo {
+.btn.media {
   border-color: var(--accent);
   color: var(--accent);
 }
-.btn.photo:hover { background: var(--accent-soft); }
+.btn.media:hover { background: var(--accent-soft); }
 
 .btn.save {
   background: var(--ink);
@@ -473,6 +473,7 @@ input[type="file"] { display: none; }
 .timeline-item.text::before { border-color: var(--ink-soft); }
 .timeline-item.checkin::before { border-color: var(--accent); background: var(--accent); }
 .timeline-item.photo::before { border-color: var(--stamp); background: var(--stamp); }
+.timeline-item.video::before { border-color: var(--stamp); background: var(--stamp); }
 
 .timeline-time {
   font-family: var(--font-mono);
@@ -574,6 +575,14 @@ input[type="file"] { display: none; }
   font-style: italic;
   color: var(--ink-soft);
   margin-top: 8px;
+}
+
+.video-entry video {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  border-radius: 1px;
+  background: #000;
 }
 
 .empty-state {
@@ -780,6 +789,7 @@ input[type="file"] { display: none; }
 
   .stamp-ring { width: 40px; height: 40px; font-size: 16px; }
   .photo-entry img { max-height: 420px; }
+  .video-entry video { max-height: 420px; }
 }
 
 /* Respect reduced-motion preferences */
