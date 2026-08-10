@@ -131,6 +131,26 @@ async function fetchAllTags() {
   }
 }
 
+// Finds every entry tagged with `tag`, across all days, most recent
+// first. Uses a collectionGroup query so it doesn't need to know which
+// day(s) the entries live in. This requires a Firestore composite index
+// (array-contains + orderBy on a different field) — if it hasn't been
+// created yet, Firestore throws an error whose message contains a
+// direct link to create it; renderSearchPage() surfaces that link.
+async function searchEntriesByTag(tag) {
+  const q = query(
+    collectionGroup(db, 'entries'),
+    where('tags', 'array-contains', tag),
+    orderBy('timestamp', 'desc')
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({
+    id: d.id,
+    dayId: d.ref.parent.parent.id,
+    ...d.data()
+  }));
+}
+
 // ---------------- Weather ----------------
 
 async function captureNoonWeather(dayId, lat, lng) {
@@ -236,6 +256,7 @@ async function route() {
   try {
     const hash = location.hash.replace(/^#\/?/, '');
     const parts = hash.split('/').filter(Boolean);
+    if (parts[0] === 'search') return await renderSearchPage();
     if (parts.length === 0) return await renderYears();
     if (parts.length === 1) return await renderMonths(parseInt(parts[0], 10));
     if (parts.length === 2) return await renderDays(parseInt(parts[0], 10), parseInt(parts[1], 10));
@@ -313,6 +334,95 @@ async function renderDays(year, month) {
     a.innerHTML = `<span class="primary">${DAY_NAMES[date.getDay()].slice(0,3)} ${d}</span><span class="secondary">${has ? 'logged' : '—'}</span>`;
     grid.appendChild(a);
   }
+}
+
+// Firestore's "index required" error message includes a direct URL to
+// create the missing composite index. Turning it into a real link means
+// a one-time setup (if needed) is a click instead of a copy-paste.
+function linkify(text) {
+  return String(text).replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
+}
+
+async function renderSearchPage() {
+  setBreadcrumb([{ label: 'Search' }]);
+
+  main.innerHTML = `
+    <h1 class="list-title">Search by Tag</h1>
+    <div class="search-bar">
+      <select id="search-tag-select">
+        <option value="">Loading tags…</option>
+      </select>
+    </div>
+    <div class="timeline" id="search-results"></div>
+  `;
+
+  const select = document.getElementById('search-tag-select');
+  const resultsEl = document.getElementById('search-results');
+  resultsEl.innerHTML = `<div class="empty-state">Choose a tag above to see matching entries.</div>`;
+
+  const tags = await fetchAllTags();
+  select.innerHTML = '<option value="">Select a tag…</option>' +
+    tags.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  if (tags.length === 0) {
+    select.disabled = true;
+    resultsEl.innerHTML = `<div class="empty-state">No tagged entries yet — tags you add to text entries will show up here.</div>`;
+  }
+
+  select.addEventListener('change', async () => {
+    const tag = select.value;
+    if (!tag) {
+      resultsEl.innerHTML = `<div class="empty-state">Choose a tag above to see matching entries.</div>`;
+      return;
+    }
+    resultsEl.innerHTML = `<div class="empty-state">Searching…</div>`;
+    try {
+      const results = await searchEntriesByTag(tag);
+      renderSearchResults(resultsEl, results, tag);
+    } catch (e) {
+      console.error('Tag search failed', e);
+      resultsEl.innerHTML = `<div class="empty-state">Search failed: ${linkify(e.message || 'please try again.')}</div>`;
+    }
+  });
+}
+
+function renderSearchResults(container, entries, tag) {
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty-state">No entries tagged "#${tag}" yet.</div>`;
+    return;
+  }
+  container.innerHTML = '';
+  entries.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'timeline-item text';
+
+    const [y, m, d] = entry.dayId.split('-').map(Number);
+    const time = document.createElement('div');
+    time.className = 'timeline-time';
+    time.innerHTML = `<a href="#/${y}/${m}/${d}">${MONTH_NAMES[m - 1].slice(0, 3)} ${d}, ${y}</a> · ${fmtTime(entry.timestamp)}`;
+
+    const body = document.createElement('div');
+    body.className = 'timeline-body text-entry';
+    const p = document.createElement('p');
+    p.textContent = entry.text;
+    body.appendChild(p);
+
+    if (Array.isArray(entry.tags) && entry.tags.length) {
+      const tagsWrap = document.createElement('div');
+      tagsWrap.className = 'entry-tags';
+      entry.tags.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'entry-tag' + (t === tag ? ' entry-tag-match' : '');
+        span.textContent = `#${t}`;
+        tagsWrap.appendChild(span);
+      });
+      body.appendChild(tagsWrap);
+    }
+
+    item.appendChild(time);
+    item.appendChild(body);
+    container.appendChild(item);
+  });
 }
 
 async function renderDayPage(year, month, day) {
